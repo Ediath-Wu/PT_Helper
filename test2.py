@@ -1,5 +1,6 @@
 from bencode import decode, encode
 import datetime
+import hashlib
 
 class GetTorrent():
     def getBT(self, file_path):
@@ -12,6 +13,7 @@ class GetTorrent():
         print("发现了以下信息:")
         i_list = []
         if mode == "print":
+            
             for i in message:
                 i_list.append(i)
                 print(i)
@@ -26,6 +28,17 @@ class GetTorrent():
             print(message[b'announce'].decode())
         elif mode == "return":
             return message[b'announce'].decode()
+
+    def getannouncelist(self, message, mode="print"):
+        if mode == "print":
+            print("="*50, "announce", "="*50)
+            print("announce 的数据类型为:", type(message[b'announce-list']))
+            print("tracker 服务器列表:")
+            for a in message[b'announce-list']:
+                for li in a:
+                    print(li.decode())
+        elif mode == "return":
+            return message[b'announce-list'].decode()
 
     def getcomment(self, message, mode="print"):
         if mode == "print":
@@ -118,14 +131,66 @@ class GetTorrent():
                 print("每个块的大小，单位字节：", value, "B")
 
             # print("value", v)
+            
+    def getw(self,message):
+        
+        def print_dict(a_dict):
+            # print(a_dict,"is a dict.")
+            for key in a_dict:
+                if isinstance(a_dict[key],dict):
+                    print("key:",key,"value:")
+                    print_dict(a_dict[key])
+                elif isinstance(a_dict[key],list):
+                    print("key:",key,"value:")
+                    print_list(a_dict[key])
+                else:
+                    if isinstance(a_dict[key],bytes):
+                        try:
+                            a_dict[key]=a_dict[key].decode()
+                        except UnicodeEncodeError:
+                            pass               
+                    print("key: ",key.decode(),", value: ",a_dict[key])
+        
+        def print_list(a_list):
+            # print(a_list,"is a list.")
+            for item in a_list:
+                if isinstance(item,dict):
+                    print_dict(item)
+                elif isinstance(item,list):
+                    print_list(item)
+                else:
+                    if isinstance(item,bytes):
+                        print("\titem: ", item.decode())
+                    else:
+                        print("\titem: ", item)
+        
+
+        for key in message:
+            print(key,"    type: ", type(message[key]))
+            if isinstance(message[key],list):
+                # print(message[key],"is a list")
+                print_list(message[key])
+                
+            elif isinstance(message[key],dict):
+                # print(message[key],"is a dict")
+                print_dict(message[key])
+    
+    def gethash(self,message):
+        info=message[b'info']
+        # 得到hash的计算方法:计算bytes格式下的整个info信息
+        print(hashlib.sha1(encode(info)).hexdigest())
 
 
 a = GetTorrent()
 
-a.getMessage(a.getBT("ptliar2/abc.torrent"))
-a.getannounce(a.getBT("ptliar2/abc.torrent"))
-# a.getcomment(a.getBT("ptliar2/abc.torrent"))
-# a.getcreatedby(a.getBT("ptliar2/abc.torrent"))
-a.getcreationdate(a.getBT("ptliar2/abc.torrent"))
-# a.getencoding(a.getBT("ptliar2/abc.torrent"))
-a.getinfo(a.getBT("ptliar2/abc.torrent"))
+a.getMessage(a.getBT("PT_Helper/abc.torrent"))
+a.getannounce(a.getBT("PT_Helper/abc.torrent"))
+# a.getcomment(a.getBT("PT_Helper/abcd.torrent"))
+# a.getcreatedby(a.getBT("PT_Helper/abcd.torrent"))
+# a.getcreationdate(a.getBT("PT_Helper/abcd.torrent"))
+# a.getencoding(a.getBT("PT_Helper/abcd.torrent"))
+# a.getinfo(a.getBT("PT_Helper/abcd.torrent"))
+# a.getannouncelist(a.getBT("pt_Helper/abc.torrent"))
+
+# a.getw(a.getBT("PT_Helper/abcd.torrent"))
+a.gethash(a.getBT("PT_Helper/abc.torrent"))
